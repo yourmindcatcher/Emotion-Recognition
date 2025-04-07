@@ -1,42 +1,47 @@
-import os
+from stt import get_user_input_text, get_user_input_voice
 
-# 기존 기능 가져오기
-from emotion import analyze_emotion
-from chatbot import chatbot_response
+def choose_character():
+    print("🎭 상담 캐릭터를 선택해주세요:")
+    print("1. 마루")
+    print("2. 아라")
 
-# ▶ 텍스트 모드 함수 (직접 입력)
-def run_text_mode():
-    print("\n✍ 텍스트 입력 모드 선택됨")
-    text = input("📝 감정을 분석할 문장을 입력하세요: ").strip()
-    if not text:
-        print("❌ 입력된 문장이 없습니다. 프로그램을 종료합니다.")
-        return
-    emotion = analyze_emotion(text)
-    response = chatbot_response(emotion)
-    print(f"\n🎯 감정 분석 결과: {emotion}")
-    print(f"🤖 챗봇 응답: {response}")
+    while True:
+        char_choice = input("번호 입력 (1 또는 2): ").strip()
+        if char_choice == "1":
+            return "마루"
+        elif char_choice == "2":
+            return "아라"
+        else:
+            print("❌ 올바른 번호를 입력해주세요 (1 또는 2).")
 
 
-# ▶ 음성 분석은 main.py를 subprocess로 실행하도록 처리
-import subprocess
+def main():
+    print("🎈 Emotion Catcher에 오신 걸 환영합니다!")
 
-def run_audio_mode():
-    print("\n🎤 음성 인식 모드 선택됨 (main.py 실행)")
-    try:
-        subprocess.run(["python", "main.py"], check=True)
-    except subprocess.CalledProcessError:
-        print("❌ main.py 실행 중 오류가 발생했어요.")
+    character_name = choose_character()
+    print(f"\n🤖 선택된 상담 캐릭터: {character_name}\n")
 
+    print("🧩 사용할 입력 방식을 선택해주세요:")
+    print("1. 텍스트 입력")
+    print("2. 음성 인식")
 
-if __name__ == "__main__":
-    print("🧠 감정 분석 모드 선택")
-    print("1. ✍ 텍스트 입력으로 감정 분석")
-    print("2. 🎤 실시간 음성 인식으로 분석")
-    choice = input("▶ 분석 방법을 선택하세요 (1 또는 2): ").strip()
+    choice = input("번호 입력 (1 또는 2): ").strip()
 
     if choice == "1":
-        run_text_mode()
+        text = get_user_input_text()
     elif choice == "2":
-        run_audio_mode()
+        text = get_user_input_voice()
     else:
-        print("❌ 잘못된 선택입니다. 프로그램을 종료합니다.")
+        print("❌ 잘못된 입력입니다. 프로그램을 종료합니다.")
+        return
+
+    if text.lower() == "종료":
+        print("👋 대화를 종료합니다. 다음에 또 만나요!")
+        return
+
+    # 🔗 이후 처리 로직
+    print(f"📝 입력된 내용: {text}")
+    print(f"🤖 ({character_name})의 상담이 이어집니다...")
+
+if __name__ == "__main__":
+    main()

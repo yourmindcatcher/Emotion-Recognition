@@ -1,40 +1,45 @@
-import whisper
-import sounddevice as sd
-import numpy as np
-import wave
-import os 
+import speech_recognition as sr
+import time
 
-# 모델 로드
-model = whisper.load_model("base")
+recognizer = sr.Recognizer()
+recognizer.energy_threshold = 150
 
-# 오디오 녹음 설정
-SAMPLE_RATE = 44100  # 44.1kHz
-DURATION = 5  # 녹음 시간 (초)
-FILENAME = "C:/Users/je547/Desktop/yourmindcatcher/recorded.wav"
+# ✍ 텍스트 입력용 함수
+def get_user_input_text():
+    return input("✍ 대화 입력: ")
 
-def record_audio(filename, duration, sample_rate):
-    print("🎤 녹음 시작...")
-    recording = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype=np.int16)
-    sd.wait()  # 녹음 완료까지 대기
-    print("✅ 녹음 완료!")
+# 🎙 음성 인식용 함수
+def get_user_input_voice():
+    print("\n🟢 음성 인식을 시작합니다! 마이크에 대고 자연스럽게 말해주세요.")
+    print("💡 말을 멈춘 뒤 5초 이상 조용하면 대화를 종료합니다.\n")
 
-    # WAV 파일 저장
-    with wave.open(filename, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)  # 16-bit 오디오
-        wf.setframerate(sample_rate)
-        wf.writeframes(recording.tobytes())
-        
-    if not os.path.exists(FILENAME):
-        print(f"❌ 녹음 파일이 존재하지 않아요: {FILENAME}")
-    else:
-        print(f"✅ 녹음 파일 확인 완료: {FILENAME}")
+    last_spoken_time = time.time()
+    combined_text = ""
 
-def speech_to_text(audio_file):
-    # Whisper 모델 로드
-    model = whisper.load_model("base")
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
 
-    print(f"📝 음성 파일 분석 중: {audio_file}")
-    result = model.transcribe(audio_file)
-    print("📝 변환된 텍스트:", result["text"])
-    return result["text"]
+        while True:
+            try:
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=3)
+                text = recognizer.recognize_google(audio, language="ko-KR")
+                print(f"🗣 {text}")
+                combined_text += " " + text
+                last_spoken_time = time.time()
+
+            except sr.WaitTimeoutError:
+                if time.time() - last_spoken_time > 5:
+                    print("⛔ 5초 동안 말이 없어 대화를 종료합니다.")
+                    return "종료"
+                continue
+
+            except sr.UnknownValueError:
+                print("⚠️ 음성을 인식하지 못했어요. 다시 말씀해주세요.")
+                if time.time() - last_spoken_time > 5:
+                    print("⛔ 5초 동안 말이 없어 대화를 종료합니다.")
+                    return "종료"
+                continue
+
+            except sr.RequestError:
+                print("⚠️ 인식 서버 오류 발생. 텍스트로 입력해주세요.")
+                return input("✍ 대화 입력: ")
